@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Model Comparison Tool</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="bg-mesh"></div>
+    <div class="container animate-fade">
+        <header class="header">
+            <h1>AI Research Assistant</h1>
+            <p style="color: var(--text-secondary)">Intelligent model recommendations powered by Gemini & ScaleDown.ai
+            </p>
+        </header>
+
+        <main class="glass-panel">
+            <h3 style="margin-bottom: 1rem;">Describe your problem</h3>
+            <textarea id="problem"
+                placeholder="e.g. I need to build a high-throughput sentiment analysis system for customer reviews. It must be very cheap but able to handle moderate complexity."></textarea>
+
+            <button id="compareBtn" class="btn btn-primary">Generate Comparison</button>
+
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p>Optimizing context & reasoning...</p>
+            </div>
+        </main>
+
+        <section id="resultsContainer" style="display: none;" class="animate-fade">
+            <!-- Content will be injected via JS -->
+        </section>
+    </div>
+
+    <script>
+        document.getElementById('compareBtn').onclick = async () => {
+            const problem = document.getElementById('problem').value;
+            if (!problem) return alert('Please describe your task.');
+
+            const btn = document.getElementById('compareBtn');
+            const loading = document.getElementById('loading');
+            const results = document.getElementById('resultsContainer');
+
+            btn.disabled = true;
+            loading.style.display = 'block';
+            results.style.display = 'none';
+
+            try {
+                const resp = await fetch('/compare', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ problem_description: problem })
+                });
+
+                const data = await resp.json();
+                if (data.status === 'error') throw new Error(data.error);
+
+                renderResults(data);
+            } catch (e) {
+                alert('Error: ' + e.message);
+            } finally {
+                btn.disabled = false;
+                loading.style.display = 'none';
+            }
+        };
+
+        function renderResults(data) {
+            const container = document.getElementById('resultsContainer');
+            const analysis = data.analysis;
+
+            let rankingsHtml = analysis.rankings.map(r => `
+                <div class="model-card">
+                    <span class="badge badge-rank">Rank ${r.rank}</span>
+                    <h3 style="margin-top:0.5rem">${r.model}</h3>
+                    <p class="reasoning">${r.reason}</p>
+                </div>
+            `).join('');
+
+            container.innerHTML = `
+                <div class="glass-panel" style="margin-top: 2rem">
+                    <h2 style="margin-bottom: 1.5rem">Analysis: ${analysis.task_type}</h2>
+                    <p style="margin-bottom: 2rem">${analysis.final_summary || analysis.recommendation_summary || ''}</p>
+                    
+                    <div class="results-grid">
+                        ${rankingsHtml}
+                    </div>
+
+                    <div class="tradeoffs">
+                        <h3>Trade-offs Considerations</h3>
+                        <p class="reasoning">${analysis.trade_offs}</p>
+                    </div>
+
+                    <details style="margin-top: 2rem; color: var(--text-secondary); cursor: pointer;">
+                        <summary>Context Optimization Details</summary>
+                        <pre style="white-space: pre-wrap; margin-top: 1rem; font-size: 0.8rem; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 0.5rem;">${data.optimized_prompt}</pre>
+                    </details>
+                </div>
+            `;
+            container.style.display = 'block';
+            container.scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+
+</html>

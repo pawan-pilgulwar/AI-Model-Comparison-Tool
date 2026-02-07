@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Comparison Results</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="container">
+    <div class="bg-mesh"></div>
+    <div class="glass-panel animate-fade">
+        <h2>Analysis Results</h2>
+        <div id="resultsContent">
+            <!-- This template can be used for server-side rendering or as a reference -->
+            <h3>Task: {{ analysis.task_type }}</h3>
+            <p>{{ analysis.final_summary }}</p>
+            <div class="results-grid">
+                {% for r in analysis.rankings %}
+                <div class="model-card">
+                    <span class="badge badge-rank">Rank {{ r.rank }}</span>
+                    <h3>{{ r.model }}</h3>
+                    <p class="reasoning">{{ r.reason }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <a href="/" class="btn btn-primary" style="margin-top: 2rem; display: inline-block; width: auto;">New Search</a>
+    </div>
+</body>
+
+</html>
